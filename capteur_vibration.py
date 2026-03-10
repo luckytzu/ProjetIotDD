@@ -1,7 +1,7 @@
 from gpiozero import InputDevice
 
 class CapteurVibration:
-    def __init__(self, pin=27):
+    def __init__(self, pin=21):
         self.capteur = InputDevice(pin, pull_up=True)
 
     def lire(self):
