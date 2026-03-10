@@ -59,11 +59,30 @@ while True:
     try:
         donnees = lire_donnees_capteur()
         if donnees:
+            # --- 1. LOGIQUE DE COULEUR SELON LA TEMPÉRATURE ---
+            temperature = donnees.get("temperature_ds18b20", donnees.get("temperature_dht11"))
+
+            # On allume la LED et on ENREGISTRE la couleur dans le dictionnaire
+            if temperature is not None:
+                if temperature > 30:
+                    led_statut.rouge()
+                    donnees["alerte_led"] = "rouge"
+                elif 20 <= temperature <= 30:
+                    led_statut.vert()
+                    donnees["alerte_led"] = "vert"
+                else: 
+                    led_statut.bleu()
+                    donnees["alerte_led"] = "bleu"
+            else:
+                led_statut.eteindre()
+                donnees["alerte_led"] = "eteinte"
+
+            # --- 2. ENVOI À FIRESTORE ---
             db.collection("mes_capteurs").add(donnees)
+            
             heure_actuelle = time.strftime('%H:%M:%S')
             print(f"[{heure_actuelle}] Données envoyées avec succès : {donnees}")
 
-            led_statut.couleur_aleatoire()
         else:
             print("Aucune donnée valide lue ce cycle, on réessaiera au prochain.")
             led_statut.eteindre()
