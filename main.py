@@ -3,6 +3,10 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 
+# --- IMPORTS DE TES CAPTEURS MODULARISÉS ---
+from dht11 import CapteurDHT11
+from ds18b20 import CapteurDS18B20
+
 # --- 1. CONFIGURATION FIRESTORE ---
 chemin_cle = "projetiotdd-firebase-adminsdk-fbsvc-b8a381685c.json"  
 
@@ -15,29 +19,42 @@ except Exception as e:
     print(f"Erreur de connexion à Firebase : {e}")
     exit()
 
-# --- 2. FONCTION DE LECTURE DU CAPTEUR ---
+# --- 2. INITIALISATION ET LECTURE DES CAPTEURS ---
+dht11 = CapteurDHT11()
+ds18b20 = CapteurDS18B20()
+
 def lire_donnees_capteur():
-    # TODO: C'est ici qu'on mettra le vrai code de ton capteur
-    # Pour l'instant, on simule une lecture
-    donnees = {
-        "temperature": 24.5, 
-        "humidite": 60,
-        # SERVER_TIMESTAMP permet à Firestore de dater l'entrée précisément
-        "timestamp": firestore.SERVER_TIMESTAMP 
-    }
-    return donnees
+    donnees = {}
+    
+    # 1. Lecture DHT11
+    valeurs_dht = dht11.lire()
+    if valeurs_dht:
+        donnees.update(valeurs_dht)
+        
+    # 2. Lecture DS18B20
+    valeurs_ds = ds18b20.lire()
+    if valeurs_ds:
+        donnees.update(valeurs_ds)
+        
+    # 3. Validation et envoi
+    if len(donnees) > 0:
+        donnees["timestamp"] = firestore.SERVER_TIMESTAMP 
+        return donnees
+    
+    return None # Si aucun capteur n'a marché
 
 # --- 3. BOUCLE PRINCIPALE ---
 print("Démarrage de l'envoi des données (CTRL+C pour arrêter)...")
 
 while True:
     try:
-        nouvelles_donnees = lire_donnees_capteur()
-        
-        db.collection("mes_capteurs").add(nouvelles_donnees)
-        
-        heure_actuelle = time.strftime('%H:%M:%S')
-        print(f"[{heure_actuelle}] Données envoyées avec succès !")
+        donnees = lire_donnees_capteur()
+        if donnees:
+            db.collection("mes_capteurs").add(donnees)
+            heure_actuelle = time.strftime('%H:%M:%S')
+            print(f"[{heure_actuelle}] Données envoyées avec succès : {donnees}")
+        else:
+            print("Aucune donnée valide lue ce cycle, on réessaiera au prochain.")
         
     except Exception as e:
         print(f"Erreur lors de l'envoi : {e}")
