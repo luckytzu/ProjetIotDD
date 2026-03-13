@@ -9,12 +9,12 @@ class IndicateurLED:
         self.led.off()
         
     def rouge(self):
-        # Rouge pur : (0, 1, 0)
-        self.led.color = (0, 1, 0)
+        # Rouge pur : (1, 0, 0)
+        self.led.color = (1, 0, 0)
         
     def vert(self):
-        # Vert pur : (1, 0, 0)
-        self.led.color = (1, 0, 0)
+        # Vert pur : (0, 1, 0)
+        self.led.color = (0, 1, 0)
         
     def bleu(self):
         # Bleu pur : (0, 0, 1)
